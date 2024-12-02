@@ -4,6 +4,7 @@ pipeline {
     stages {
         stage ('cleanup'){
             steps{
+                sh 'docker container rm -f test'
                 cleanWs()
             }
         }
@@ -37,6 +38,13 @@ pipeline {
                 echo "Start docker container of nodejs app on port 3000"
                 sh 'docker run -d --rm -p 3000:3000 --name test nodejs-test'
             }
+        }
+    }    
+    post{
+        cleanup{
+            cleanWs()
+            echo "Cleaning images..."
+            sh 'docker image prune -f'
         }
     }
 }
