@@ -26,5 +26,17 @@ pipeline {
                 sh 'docker build -t nodejs-test .'
             }
         }
+        stage('Push artifact'){
+            steps{
+                echo "Push docker container of nodejs app"
+                // TO DO
+            }
+        }
+        stage('deployment'){
+            steps{
+                echo "Start docker container of nodejs app on port 3000"
+                sh 'docker run -d --rm -p 3000:3000 --name test nodejs-test'
+            }
+        }
     }
 }
