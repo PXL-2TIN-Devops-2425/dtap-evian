@@ -20,5 +20,11 @@ pipeline {
                 }               
             }
         }
+        stage('Build artifact'){
+            steps{
+                echo "Build docker container of nodejs app"
+                sh 'docker build -t nodejs-test .'
+            }
+        }
     }
 }
