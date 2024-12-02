@@ -24,19 +24,19 @@ pipeline {
         stage('Build artifact'){
             steps{
                 echo "Build docker container of nodejs app"
-                sh 'docker build -t nodejs-test .'
+                sh 'docker build -t thabondi/dtap-pe .'
             }
         }
         stage('Push artifact'){
             steps{
                 echo "Push docker container of nodejs app"
-                // TO DO
+                sh 'docker push thabondi/dtap-pe:latest'
             }
         }
         stage('deployment'){
             steps{
                 echo "Start docker container of nodejs app on port 3000"
-                sh 'docker run -d --rm -p 3000:3000 --name test nodejs-test'
+                sh 'docker run -d --rm -p 3000:3000 --name test thabondi/dtap-pe'
             }
         }
     }    
