@@ -4,7 +4,8 @@ pipeline {
     stages {
         stage ('cleanup'){
             steps{
-                // TODO
+                sh 'docker container rm -f test'
+                cleanWs()
             }
         }
         stage('fetch app code') {
@@ -12,6 +13,38 @@ pipeline {
                 // Get some code from a GitHub repository
                 git branch: 'main', url: 'https://github.com/PXL-2TIN-DevOps-Resources/calculator-app-finished.git'
             }
+        }
+        stage('Install dependencies'){
+            steps{
+                nodejs('testenvnode') {
+                    sh 'npm install'
+                }               
+            }
+        }
+        stage('Build artifact'){
+            steps{
+                echo "Build docker container of nodejs app"
+                sh 'docker build -t thabondi/dtap-pe .'
+            }
+        }
+        stage('Push artifact'){
+            steps{
+                echo "Push docker container of nodejs app"
+                sh 'docker push thabondi/dtap-pe:latest'
+            }
+        }
+        stage('deployment'){
+            steps{
+                echo "Start docker container of nodejs app on port 3000"
+                sh 'docker run -d --rm -p 3000:3000 --name test thabondi/dtap-pe'
+            }
+        }
+    }    
+    post{
+        cleanup{
+            cleanWs()
+            echo "Cleaning images..."
+            sh 'docker image prune -f'
         }
     }
 }
