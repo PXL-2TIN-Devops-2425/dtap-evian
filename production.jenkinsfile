@@ -7,17 +7,33 @@ pipeline {
             }
 	stage('deploy prod') {
             steps {
+		echo "pulling docker image"
+	        sh" ssh -i "C:\Users\Luis_A-C_R\Downloads\Production-key.pem" ubuntu@3.89.223.72 'docker pull thabondi/dtap-pe:latest' "
                 }
-            }
+            }3.89.223.72
 	stage('start prod') {
             steps {
+		echo "Starting docker container on remote server"
+		sh " ssh -i "C:\Users\Luis_A-C_R\Downloads\Production-key.pem" ubuntu@3.89.223.72 
+			'docker run -d --rm -p 80:80 --name production thabondi/dtap-pe:latest' "
+
                 }
             }
 
 	stage('test prod') {
             steps {
+		echo "Checking for code 200"
+		 sh " curl -s -o /dev/null -w '%{http_code}' http://3.89.223.72:80 | grep -q '200' "
                 }
             }
         }
+	post{
+        cleanup{
+            cleanWs()
+            echo "Cleaning images..."
+	    sh " ssh -i "C:\Users\Luis_A-C_R\Downloads\Production-key.pem" ubuntu@3.89.223.72  'docker image prune -f' "
+        }
+    }
+
     }
 }
