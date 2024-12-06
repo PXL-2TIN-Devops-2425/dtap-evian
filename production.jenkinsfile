@@ -4,32 +4,50 @@ pipeline {
         stage('dtap production') {
             steps {
                 echo "good luck..."
+                }
             }
-        }
-	    stage('deploy prod') {
+        stage('cleanup') {
             steps {
-		        echo "pulling docker image"
-	            sh "ssh -i "C:\Users\Luis_A-C_R\Downloads\Production-key.pem" ubuntu@3.89.223.72 'docker pull thabondi/dtap-pe:latest' "
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker container rm -f production'"
+                }
+                cleanWs()
+                }
+            }
+        stage('deploy prod') {
+            steps {
+                echo "pulling docker image"
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker pull thabondi/dtap-pe:latest' "
+                }
             }
         }
-	    stage('start prod') {
+        stage('start prod') {
             steps {
                 echo "Starting docker container on remote server"
-                sh "ssh -i "C:\Users\Luis_A-C_R\Downloads\Production-key.pem" ubuntu@3.89.223.72 'docker run -d --rm -p 80:80 --name production thabondi/dtap-pe:latest'"
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker run -d --rm -p 80:3000 --name production thabondi/dtap-pe:latest' "
+                }
             }
         }
-	    stage('test prod') {
+        stage('test prod') {
             steps {
-		        echo "Checking for code 200"
-		        sh " curl -s -o /dev/null -w '%{http_code}' http://3.89.223.72:80 | grep -q '200' "
+                echo "Checking for code 200"
+                sh "curl -I http://54.225.22.130/"
+            }
+        }
+        stage('prod cleanup') {
+            steps {
+                echo "Cleaning images..."
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker image prune -f' "
+                }
             }
         }
     }
-	post{
+    post{
         cleanup{
             cleanWs()
-            echo "Cleaning images..."
-	        sh " ssh -i "C:\Users\Luis_A-C_R\Downloads\Production-key.pem" ubuntu@3.89.223.72  'docker image prune -f' "
         }
     }
 }
