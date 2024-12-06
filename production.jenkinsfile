@@ -4,7 +4,50 @@ pipeline {
         stage('dtap production') {
             steps {
                 echo "good luck..."
+                }
             }
+        stage('cleanup') {
+            steps {
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker container rm -f production'"
+                }
+                cleanWs()
+                }
+            }
+        stage('deploy prod') {
+            steps {
+                echo "pulling docker image"
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker pull thabondi/dtap-pe:latest' "
+                }
+            }
+        }
+        stage('start prod') {
+            steps {
+                echo "Starting docker container on remote server"
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker run -d --rm -p 80:3000 --name production thabondi/dtap-pe:latest' "
+                }
+            }
+        }
+        stage('test prod') {
+            steps {
+                echo "Checking for code 200"
+                sh "curl -I http://54.225.22.130/"
+            }
+        }
+        stage('prod cleanup') {
+            steps {
+                echo "Cleaning images..."
+                sshagent(['prodserver']){
+                    sh "ssh -o StrictHostKeyChecking=no ubuntu@54.225.22.130 'docker image prune -f' "
+                }
+            }
+        }
+    }
+    post{
+        cleanup{
+            cleanWs()
         }
     }
 }
